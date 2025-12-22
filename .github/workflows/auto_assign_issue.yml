@@ -29,6 +29,7 @@ jobs:
             if (
               !body.includes('assign me') &&
               !body.includes('assign it to me') &&
+              !body.includes('assign this to me') &&
               !body.includes('assign this issue to me') &&
               !body.includes('assign the issue to me')
             ) {
