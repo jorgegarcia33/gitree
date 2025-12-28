@@ -22,6 +22,7 @@ def draw_tree(
     respect_gitignore: bool,
     gitignore_depth: Optional[int],
     max_items: Optional[int] = None,
+    max_lines: Optional[int] = None,
     no_limit: bool = False,
     exclude_depth: Optional[int] = None,
     no_files: bool = False,
@@ -44,6 +45,7 @@ def draw_tree(
         respect_gitignore (bool): If True, respect .gitignore rules
         gitignore_depth (Optional[int]): Maximum depth to search for .gitignore files
         max_items (Optional[int]): Maximum number of items to show per directory
+        max_lines (Optional[int]): Maximum number of lines to show
         exclude_depth (Optional[int]): Depth limit for exclude patterns
         no_files (bool): If True, only show directories
         emoji (bool): If True, show emoji icons in output
@@ -57,9 +59,15 @@ def draw_tree(
     gi = GitIgnoreMatcher(root, enabled=respect_gitignore, gitignore_depth=gitignore_depth)
 
     output_buffer.write(root.name)
+    lines = 1
+    stop_writing = False
 
     def rec(dirpath: Path, prefix: str, current_depth: int, patterns: List[str]) -> None:
+        nonlocal lines, stop_writing
         if depth is not None and current_depth >= depth:
+            return
+
+        if stop_writing:
             return
 
         if respect_gitignore and gi.within_depth(dirpath):
@@ -116,6 +124,15 @@ def draw_tree(
 
 
         for i, entry in enumerate(entries):
+            if stop_writing:
+                return
+
+            if max_lines is not None and lines >= max_lines:
+                remaining = len(entries) - i + truncated
+                output_buffer.write(prefix + LAST + f"... and more lines")
+                stop_writing = True
+                return
+
             is_last = i == len(entries) - 1 and truncated == 0
             connector = LAST if is_last else BRANCH
             suffix = "/" if entry.is_dir() else ""
@@ -130,14 +147,17 @@ def draw_tree(
                     except PermissionError:
                         emoji_str = NORMAL_DIR_EMOJI
                 output_buffer.write(prefix + connector + emoji_str + " " + entry.name + suffix)
+            
+            lines += 1
 
             if entry.is_dir():
                 rec(entry, prefix + (SPACE if is_last else VERT),  current_depth + 1, patterns)
 
         # Show truncation message if items were hidden
-        if truncated > 0:
+        if truncated > 0 and not stop_writing:
             # truncation line is always last among displayed items
             output_buffer.write(prefix + LAST + f"... and {truncated} more items")
+            lines += 1
 
     if root.is_dir():
         rec(root, "", 0, [])
@@ -251,6 +271,7 @@ def run_tree_mode(
             respect_gitignore=not args.no_gitignore,
             gitignore_depth=args.gitignore_depth,
             max_items=args.max_items,
+            max_lines=args.max_lines,
             no_limit=args.no_limit,
             exclude_depth=args.exclude_depth,
             no_files=args.no_files,
@@ -312,6 +333,7 @@ def run_tree_mode(
             respect_gitignore=not args.no_gitignore,
             gitignore_depth=args.gitignore_depth,
             max_items=args.max_items,
+            max_lines=args.max_lines,
             exclude_depth=args.exclude_depth,
             no_files=args.no_files,
             whitelist=selected_files,

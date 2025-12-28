@@ -1,6 +1,7 @@
 import argparse
 from pathlib import Path
 from ..utilities.utils import max_items_int
+from ..utilities.utils import max_lines_int
 
 
 def parse_args() -> argparse.Namespace:
@@ -65,6 +66,12 @@ def parse_args() -> argparse.Namespace:
         type=max_items_int,
         default=argparse.SUPPRESS,
         help="Limit items shown per directory (use --no-limit for unlimited)",
+    )
+    ap.add_argument(
+        "--max-lines",
+        type=max_lines_int,
+        default=argparse.SUPPRESS,
+        help="Limit lines shown ",
     )
     ap.add_argument(
         "--overrride-files",
