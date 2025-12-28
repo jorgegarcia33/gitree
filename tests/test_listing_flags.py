@@ -91,7 +91,6 @@ class TestListingFlags(unittest.TestCase):
         for i in range(30):  # default limit is 20
             (self.root / "folder" / f"file{i}.txt").write_text("data")
 
-        # We need to increase max-lines because default is 30 and we have >30 items
         result = self._run_cli("--no-limit", "--max-lines", "100")
 
         self.assertEqual(result.returncode, 0, msg=result.stderr)
